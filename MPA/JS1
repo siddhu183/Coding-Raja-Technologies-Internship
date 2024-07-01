@@ -1,0 +1,139 @@
+document.addEventListener('DOMContentLoaded', () => {
+    const playPauseButton = document.getElementById('play-pause');
+    const prevButton = document.getElementById('prev');
+    const nextButton = document.getElementById('next');
+    const volumeControl = document.getElementById('volume');
+    const progressBar = document.getElementById('progress');
+    const shuffleButton = document.getElementById('shuffle');
+    const repeatButton = document.getElementById('repeat');
+    const createPlaylistButton = document.getElementById('create-playlist');
+    const trackList = document.querySelector('.track-list');
+    const playlistList = document.querySelector('.playlist-list');
+
+    let isPlaying = false;
+    let currentTrackIndex = 0;
+    let isShuffling = false;
+    let isRepeating = false;
+    const audio = new Audio();
+
+    const tracks = [
+        { title: 'Track 1', artist: 'Artist 1', src: 'track1.mp3', cover: 'cover1.jpg' },
+        { title: 'Track 2', artist: 'Artist 2', src: 'track2.mp3', cover: 'cover2.jpg' },
+        // Add more tracks here
+    ];
+
+    const playlists = [];
+
+    function loadTrack(index) {
+        const track = tracks[index];
+        audio.src = track.src;
+        document.title = `${track.title} - ${track.artist}`;
+        progressBar.value = 0;
+    }
+
+    function playTrack() {
+        audio.play();
+        isPlaying = true;
+        playPauseButton.textContent = 'Pause';
+    }
+
+    function pauseTrack() {
+        audio.pause();
+        isPlaying = false;
+        playPauseButton.textContent = 'Play';
+    }
+
+    function updateProgress() {
+        const progress = (audio.currentTime / audio.duration) * 100;
+        progressBar.value = progress;
+    }
+
+    function nextTrack() {
+        currentTrackIndex = isShuffling ? Math.floor(Math.random() * tracks.length) : (currentTrackIndex + 1) % tracks.length;
+        loadTrack(currentTrackIndex);
+        playTrack();
+    }
+
+    function prevTrack() {
+        currentTrackIndex = isShuffling ? Math.floor(Math.random() * tracks.length) : (currentTrackIndex - 1 + tracks.length) % tracks.length;
+        loadTrack(currentTrackIndex);
+        playTrack();
+    }
+
+    function toggleShuffle() {
+        isShuffling = !isShuffling;
+        shuffleButton.classList.toggle('active', isShuffling);
+    }
+
+    function toggleRepeat() {
+        isRepeating = !isRepeating;
+        repeatButton.classList.toggle('active', isRepeating);
+    }
+
+    function createPlaylist() {
+        const name = prompt('Enter playlist name:');
+        if (name) {
+            playlists.push({ name, tracks: [] });
+            renderPlaylists();
+        }
+    }
+
+    function renderTracks() {
+        trackList.innerHTML = '';
+        tracks.forEach((track, index) => {
+            const trackElement = document.createElement('div');
+            trackElement.classList.add('track');
+            trackElement.innerHTML = `
+                <img src="${track.cover}" alt="${track.title}">
+                <div class="track-info">
+                    <h3>${track.title}</h3>
+                    <p>${track.artist}</p>
+                </div>
+            `;
+            trackElement.addEventListener('click', () => {
+                currentTrackIndex = index;
+                loadTrack(index);
+                playTrack();
+            });
+            trackList.appendChild(trackElement);
+        });
+    }
+
+    function renderPlaylists() {
+        playlistList.innerHTML = '';
+        playlists.forEach((playlist, index) => {
+            const playlistElement = document.createElement('div');
+            playlistElement.classList.add('playlist');
+            playlistElement.textContent = playlist.name;
+            playlistList.appendChild(playlistElement);
+        });
+    }
+
+    playPauseButton.addEventListener('click', () => {
+        isPlaying ? pauseTrack() : playTrack();
+    });
+
+    prevButton.addEventListener('click', prevTrack);
+    nextButton.addEventListener('click', nextTrack);
+    volumeControl.addEventListener('input', (e) => {
+        audio.volume = e.target.value;
+    });
+    progressBar.addEventListener('input', (e) => {
+        audio.currentTime = (e.target.value / 100) * audio.duration;
+    });
+    audio.addEventListener('timeupdate', updateProgress);
+    audio.addEventListener('ended', () => {
+        if (isRepeating) {
+            playTrack();
+        } else {
+            nextTrack();
+        }
+    });
+    shuffleButton.addEventListener('click', toggleShuffle);
+    repeatButton.addEventListener('click', toggleRepeat);
+    createPlaylistButton.addEventListener('click', createPlaylist);
+
+    renderTracks();
+    renderPlaylists();
+    loadTrack(currentTrackIndex);
+});
